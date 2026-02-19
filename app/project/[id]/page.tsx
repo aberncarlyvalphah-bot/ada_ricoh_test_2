@@ -8,12 +8,12 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 export default function WorkbenchPage({ params }: { params: { id: string } }) {
   return (
     <TooltipProvider>
-      <div className="flex h-screen overflow-hidden bg-background">
+      <div className="flex h-screen overflow-y-auto bg-background">
         {/* Sidebar */}
         <Sidebar />
 
         {/* Main Content */}
-        <main className="flex-1 flex overflow-hidden">
+        <main className="flex-1 flex overflow-y-auto">
           {/* Left Panel: Chat (30%) */}
           <div className="w-[30%] flex flex-col min-w-0">
             <ChatPanel />
