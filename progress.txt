@@ -1,5 +1,30 @@
 # Progress Log
 
+## 2026-02-19 - Fix: Add independent scrollbars for left and right panels
+
+### What was done:
+- 修复 workbench 页面滚动条布局，实现左右两侧独立滚动：
+  - 外层容器：`h-screen overflow-hidden` - 固定高度，禁止滚动
+  - main 区域：`flex-1 flex overflow-hidden` - 不滚动，作为 flex 容器
+  - 左侧面板：`w-[30%] flex flex-col min-w-0 h-full overflow-y-auto overflow-x-hidden` - 独立垂直滚动
+  - 右侧面板：`flex-1 flex flex-col min-w-0 h-full overflow-y-auto overflow-x-hidden` - 独立垂直滚动
+
+### Testing:
+- ✅ npm run lint 通过
+- ✅ npm run build 成功
+- ✅ 左侧面板滚动条功能正常
+- ✅ 右侧面板滚动条功能正常
+- ✅ 两侧面板互不干扰，独立滚动
+- ✅ 图表和数据表格在右侧面板中可通过滚动查看
+
+### Notes:
+- 使用 `h-full` 确保两侧面板填满可用高度
+- `overflow-y-auto` 在内容超出时自动显示滚动条
+- `overflow-x-hidden` 防止水平滚动条出现
+- 滚动条宽度约 16px（浏览器默认）
+
+---
+
 ## 2026-02-19 - Fix: Chart configuration panel visibility
 
 ### What was done:
