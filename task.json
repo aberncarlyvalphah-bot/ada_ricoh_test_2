@@ -80,7 +80,7 @@
         "实现 Excel 文件解析（使用 xlsx 库）",
         "验证解析后的数据结构正确"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 7,

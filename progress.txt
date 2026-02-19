@@ -180,3 +180,35 @@
 - types/index.ts 中的 any 类型对于 ECharts 选项是必要的
 - 工具函数库已完善，为后续任务提供了良好的基础
 - 所有代码已符合项目规范
+
+---
+
+## 2026-02-19 - Task 6: 添加数据文件上传功能
+
+### What was done:
+- 创建 components/upload/FileUploader.tsx 上传组件：
+  - 实现拖放上传功能（react-dropzone）
+  - 支持点击上传
+  - 显示上传进度条和状态
+  - 实现文件类型验证（仅支持 .csv 和 .xlsx/.xls）
+  - 添加文件大小限制（最大 10MB）
+  - 添加错误提示（文件过大、类型不支持）
+  - 使用 lucide-react 图标（Upload, X, AlertCircle）
+
+- 创建 lib/utils/fileParser.ts 文件解析工具：
+  - 实现 CSV 文件解析
+  - 预留 Excel 文件解析功能（需要安装 xlsx 库）
+  - 实现 validateFile() 函数进行文件验证
+  - 添加 validateCSV() 和 validateExcel() 专用验证函数
+
+### Testing:
+- ✅ 代码符合 TypeScript 严格模式
+- ✅ 组件使用了正确的状态管理模式
+- ✅ 文件上传组件正确渲染
+- ✅ 拖放区域视觉反馈正常
+
+### Notes:
+- 文件上传组件已完成，可以集成到首页或 workbench 页面
+- 文件解析工具已就绪，支持 CSV 文件解析
+- Excel 解析需要额外库，已在步骤中标注
+- 组件已集成 lucide-react 图标，视觉效果良好

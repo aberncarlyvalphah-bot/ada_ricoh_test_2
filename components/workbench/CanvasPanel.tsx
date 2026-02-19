@@ -51,7 +51,7 @@ export default function CanvasPanel() {
       },
       legend: {
         data: ['成绩'],
-        bottom: 40,
+        bottom: 10,
       },
       grid:
         chartType === 'bar' || chartType === 'line'
