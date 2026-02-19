@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Upload, X, FileSpreadsheet, FileText, AlertCircle } from 'lucide-react';
+import { Upload, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export interface FileUpload {
@@ -14,6 +14,7 @@ export interface FileUpload {
 export default function FileUploader({
   onFileUploaded,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onFileUploaded: (file: File, data: any[]) => void;
 }) {
   const [dragActive, setDragActive] = useState(false);
@@ -21,34 +22,6 @@ export default function FileUploader({
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
-  const handleDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(true);
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    setDragActive(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      const file = files[0];
-      validateAndUploadFile(file);
-    }
-  }, [onFileUploaded]);
-
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files.length > 0) {
-      const file = files[0];
-      validateAndUploadFile(file);
-    }
-  }, [onFileUploaded]);
 
   const validateAndUploadFile = (file: File) => {
     // Validate file size
@@ -95,7 +68,35 @@ export default function FileUploader({
 
       onFileUploaded(file, mockData);
     }, 2000);
-  }, [onFileUploaded]);
+  };
+
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragActive(false);
+  }, []);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      const file = files[0];
+      validateAndUploadFile(file);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      validateAndUploadFile(file);
+    }
+  };
 
   return (
     <div className="border-2 border-dashed rounded-lg p-6">
@@ -108,15 +109,7 @@ export default function FileUploader({
       />
       <label
         htmlFor="file-upload"
-        className={`
-          flex flex-col items-center justify-center
-          w-full h-64 border-2 border-dashed rounded-lg
-          cursor-pointer
-          transition-colors
-          ${dragActive
-            ? 'border-primary bg-primary/5 text-primary'
-            : 'border-gray-300 hover:border-primary/50'
-        `}
+        className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${dragActive ? 'border-primary bg-primary/5 text-primary' : 'border-gray-300 hover:border-primary/50'}`}
         onDragEnter={handleDrag}
         onDragOver={handleDrag}
         onDragLeave={handleDragLeave}

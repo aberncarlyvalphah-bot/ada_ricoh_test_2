@@ -28,14 +28,13 @@ export interface Message {
 }
 
 // Chart types (Protocol C)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ChartDataset {
   dimensions: string[];
-  source: any[];
+  source: any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 export interface ChartOptions {
-  [key: string]: any;
+  [key: string]: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 export interface ChartConfig {
@@ -43,12 +42,12 @@ export interface ChartConfig {
   recommended_type: string;
   dataset: ChartDataset;
   chart_options: ChartOptions;
-  preview_data: any[];
+  preview_data: any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 // Data types for analysis
 export interface DataRow {
-  [key: string]: any;
+  [key: string]: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 export interface DataPreview {

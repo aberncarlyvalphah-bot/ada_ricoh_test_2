@@ -3,10 +3,17 @@ export function parseCSV(file: File): Promise<Record<string, string>[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      const text = e.target.result as string;
-      const lines = text.split('\n');
-      const headers = lines[0].split(',');
-      const data = lines.slice(1).map((line) => line.split(',').map(values => values.split(','));
+      const text = e.target?.result as string;
+      const lines = text.split('\n').filter((line) => line.trim());
+      const headers = lines[0].split(',').map((h) => h.trim());
+      const data = lines.slice(1).map((line) => {
+        const values = line.split(',').map((v) => v.trim());
+        const row: Record<string, string> = {};
+        headers.forEach((header, index) => {
+          row[header] = values[index] || '';
+        });
+        return row;
+      });
 
       resolve(data);
     };
