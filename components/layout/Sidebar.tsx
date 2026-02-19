@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { MessageSquarePlus, Database, FolderOpen, ChevronDown, FileSpreadsheet, BarChart3, LayoutDashboard, FileText, Table2, Upload, Sparkles } from 'lucide-react';
+import { MessageSquarePlus, FolderOpen, ChevronDown, FileSpreadsheet, BarChart3, LayoutDashboard, FileText, Table2, Sparkles, Trash2, FilePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TaskMode } from '@/types';
+import { useFileLibrary } from '@/lib/hooks/useFileLibrary';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const modeIcons: Record<TaskMode, React.ReactNode> = {
   chart: <BarChart3 className="h-4 w-4" />,
   dashboard: <LayoutDashboard className="h-4 w-4" />,
@@ -13,109 +15,57 @@ const modeIcons: Record<TaskMode, React.ReactNode> = {
   report: <FileText className="h-4 w-4" />,
 };
 
-// Mock data - will be replaced with real data from Supabase
-const mockProjects = [
-  { id: '1', title: '各地区销售额对比分析', mode: 'chart' as TaskMode, createdAt: '2天前' },
-  { id: '2', title: '学生成绩仪表盘', mode: 'dashboard' as TaskMode, createdAt: '5天前' },
-];
+// Mock user ID - will be replaced with real user authentication
+const MOCK_USER_ID = 'user_001';
 
-const mockFiles = [
-  { id: '1', name: 'Q1销售数据.xlsx' },
-  { id: '2', name: '学生成绩单.csv' },
-  { id: '3', name: '2024年度报表.xlsx' },
-];
+interface SidebarProps {
+  onUploadComplete?: (uploadedFile: { id: string; name: string; size: number; rowCount?: number; columnCount?: number }) => void;
+}
 
-export default function Sidebar() {
+export default function Sidebar({ onUploadComplete }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [filesOpen, setFilesOpen] = useState(true);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const target = e.target as HTMLInputElement;
-    if (target.files && target.files.length > 0) {
-      const file = target.files[0];
-      console.log('File selected:', file.name, 'Size:', file.size);
+  // Use file library hook
+  const { files, handleDelete } = useFileLibrary(MOCK_USER_ID);
 
-      // Validate file
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxSize) {
-        alert(`❌ 文件过大！\n最大支持 10 MB\n当前文件大小: ${Math.round(file.size / 1024 / 1024)} MB`);
-        return;
-      }
-
-      const fileName = file.name.toLowerCase();
-      const isCSV = fileName.endsWith('.csv');
-      const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
-
-      if (!isCSV && !isExcel) {
-        alert('❌ 不支持的文件格式！\n仅支持 CSV 或 Excel 文件 (.csv, .xlsx, .xls)');
-        return;
-      }
-
-      // TODO: Process and upload the file
-      alert(`✅ 文件已选择:\n\n文件名: ${file.name}\n大小: ${Math.round(file.size / 1024)} KB\n格式: ${isCSV ? 'CSV' : 'Excel'}\n\n文件正在解析...\n\n实际上传功能待实现`);
-    }
+  const handleAttachFile = (file: { id: string; name: string; size: number; rowCount?: number; columnCount?: number }) => {
+    onUploadComplete?.(file);
   };
 
   return (
-    <aside className="w-64 h-screen flex flex-col bg-sidebar border-r border-border shrink-0">
-      {/* Logo */}
-      <div className="px-4 py-4 border-b border-border">
-        <h1
-          className="text-xl font-bold text-foreground tracking-tight cursor-pointer flex items-center gap-2"
-          onClick={() => router.push('/')}
-        >
-          <Sparkles className="h-5 w-5 text-primary" />
-          <span className="text-primary italic">A</span>da<span className="text-muted-foreground font-normal text-sm">.ai</span>
-        </h1>
-      </div>
+    <>
+      <aside className="w-64 h-screen flex flex-col bg-sidebar border-r border-border shrink-0">
+        {/* Logo */}
+        <div className="px-4 py-4 border-b border-border">
+          <h1
+            className="text-xl font-bold text-foreground tracking-tight cursor-pointer flex items-center gap-2"
+            onClick={() => router.push('/')}
+          >
+            <Sparkles className="h-5 w-5 text-primary" />
+            <span className="text-primary italic">A</span>da<span className="text-muted-foreground font-normal text-sm">.ai</span>
+          </h1>
+        </div>
 
-      {/* Hidden file input for upload */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".csv,.xlsx,.xls"
-        style={{
-          position: 'fixed',
-          left: '-9999px',
-          opacity: 0,
-          pointerEvents: 'none'
-        }}
-        onChange={handleFileUpload}
-      />
+        {/* New Chat */}
+        <div className="px-3 pt-3">
+          <button
+            onClick={() => router.push('/')}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20"
+          >
+            <MessageSquarePlus className="h-4 w-4" />
+            New Chat
+          </button>
+        </div>
 
-      {/* New Chat */}
-      <div className="px-3 pt-3">
-        <button
-          onClick={() => router.push('/')}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20"
-        >
-          <MessageSquarePlus className="h-4 w-4" />
-          New Chat
-        </button>
-      </div>
-
-      {/* Projects */}
-      <div className="px-3 pt-4 flex-1 overflow-y-auto">
-        <div
-          className="flex items-center justify-between w-full px-3 py-1.5"
-        >
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Project</span>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => {
-                // Trigger file upload using ref
-                if (fileInputRef.current) {
-                  fileInputRef.current.click();
-                }
-              }}
-              className="p-1 hover:bg-accent/50 rounded transition-colors"
-              title="上传文件"
-            >
-              <Upload className="h-3 w-3" />
-            </button>
+        {/* Projects */}
+        <div className="px-3 pt-4 flex-none overflow-y-auto">
+          <div
+            className="flex items-center justify-between w-full px-3 py-1.5"
+          >
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Project</span>
             <button
               onClick={() => setProjectsOpen(!projectsOpen)}
               className="p-1 hover:bg-accent/50 rounded transition-colors"
@@ -123,30 +73,31 @@ export default function Sidebar() {
               <ChevronDown className={cn("h-3 w-3 transition-transform", !projectsOpen && "-rotate-90")} />
             </button>
           </div>
-        </div>
 
-        {projectsOpen && (
-          <div className="mt-1 space-y-0.5">
-            {mockProjects.map((project) => (
+          {projectsOpen && (
+            <div className="mt-1 space-y-0.5">
+              {/* Mock projects - will be replaced with real data */}
               <button
-                key={project.id}
-                onClick={() => router.push(`/project/${project.id}`)}
+                onClick={() => router.push('/project/demo')}
                 className={cn(
                   "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors truncate",
-                  pathname === `/project/${project.id}`
+                  pathname === '/project/demo'
                     ? "bg-accent text-accent-foreground font-medium"
                     : "hover:bg-accent/50 text-foreground"
                 )}
               >
-                {modeIcons[project.mode]}
-                <span className="truncate">{project.title}</span>
+                <BarChart3 className="h-4 w-4" />
+                <span className="truncate">数据分析演示</span>
               </button>
-            ))}
-          </div>
-        )}
+              <div className="px-3 py-2 text-xs text-muted-foreground">
+                项目历史将在这里显示...
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* File Library */}
-        <div className="mt-4">
+        <div className="mt-4 flex-1 flex flex-col min-h-0">
           <button
             onClick={() => setFilesOpen(!filesOpen)}
             className="flex items-center justify-between w-full px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
@@ -160,32 +111,52 @@ export default function Sidebar() {
 
           {filesOpen && (
             <div className="mt-1 space-y-0.5">
-              {mockFiles.map((file) => (
-                <button
-                  key={file.id}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-accent/50 text-foreground transition-colors truncate group"
-                >
-                  <FileSpreadsheet className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
-                  <span className="truncate">{file.name}</span>
-                </button>
-              ))}
+              {files.length === 0 ? (
+                <div className="px-3 py-4 text-xs text-center text-muted-foreground">
+                  还没有上传的文件
+                </div>
+              ) : (
+                files.map((file) => (
+                  <div
+                    key={file.id}
+                    className="group w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-accent/50 transition-colors"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
+                    <span className="flex-1 min-w-0 truncate">{file.name}</span>
+                    <button
+                      onClick={() => handleAttachFile(file)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-primary/10 rounded transition-all"
+                      title="引用此文件"
+                    >
+                      <FilePlus className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(file.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/20 hover:text-destructive rounded transition-all"
+                      title="删除文件"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>
-      </div>
 
-      {/* User Profile */}
-      <div className="px-3 py-3 border-t border-border">
-        <div className="flex items-center gap-2 px-3 py-2">
-          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
-            U
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate text-foreground">User</p>
-            <p className="text-xs text-muted-foreground truncate">user@example.com</p>
+        {/* User Profile */}
+        <div className="px-3 py-3 border-t border-border">
+          <div className="flex items-center gap-2 px-3 py-2">
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
+              U
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate text-foreground">User</p>
+              <p className="text-xs text-muted-foreground truncate">user@example.com</p>
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

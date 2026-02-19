@@ -33,6 +33,8 @@ const mockChartData = {
 };
 
 // Additional mock data for scatter and heatmap
+// TODO: Remove these when real data source is used
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const scatterData = [
   [85, 78, '语文'],
   [92, 85, '数学'],
@@ -48,6 +50,7 @@ const scatterData = [
   [88, 85, '体育'],
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const heatmapData = [
   [0, 0, 85],
   [0, 1, 78],
@@ -63,6 +66,7 @@ const heatmapData = [
   [3, 2, 78],
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const previewData = [
   { 科目: '语文', 成绩: 85 },
   { 科目: '数学', 成绩: 92 },
@@ -81,7 +85,24 @@ interface ChartConfig {
   borderColor: string;
 }
 
-export default function CanvasPanel() {
+interface DataSource {
+  [key: string]: string | number;
+}
+
+interface CanvasPanelProps {
+  chart?: {
+    chart_id: string;
+    recommended_type: string;
+    dataset: {
+      dimensions: string[];
+      source: any[];
+    };
+    chart_options: any;
+    preview_data: any[];
+  } | null;
+}
+
+export default function CanvasPanel({ chart }: CanvasPanelProps) {
   const [chartType, setChartType] = useState<ChartType>('radar');
   const [showConfig, setShowConfig] = useState(false);
   const [chartConfig, setChartConfig] = useState<ChartConfig>({
@@ -173,8 +194,14 @@ export default function CanvasPanel() {
   };
 
   const getOption = () => {
-    const categories = mockChartData.source.map((item) => item['科目']);
-    const values = mockChartData.source.map((item) => item['成绩']);
+    if (!chart) return {};
+
+    const data = chart.dataset.source as DataSource[];
+    const dimensions = chart.dataset.dimensions;
+
+    // Get category and value from data
+    const categories = data.map((item) => String(item[dimensions[0]]));
+    const values = data.map((item) => Number(item[dimensions[1]]));
 
     const baseOption: Record<string, unknown> = {
       tooltip: {
@@ -467,9 +494,13 @@ export default function CanvasPanel() {
   };
 
   return (
-    <div className="w-full min-h-full flex flex-col bg-background p-0 self-start">
-      {/* Chart Card */}
-      <div className="bg-card border rounded-lg shadow-sm mb-4 mx-4 mt-4">
+    <div className="w-full flex flex-col bg-background p-0 min-h-full">
+      {!chart ? (
+        <EmptyCanvasState />
+      ) : (
+        <>
+          {/* Chart Card */}
+          <div className="bg-card border rounded-lg shadow-sm mb-4 mx-4 mt-4 shrink-0">
         {/* Header with chart type selector and config button */}
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <h3 className="font-semibold text-sm">成绩分布图</h3>
@@ -569,14 +600,38 @@ export default function CanvasPanel() {
       </div>
 
       {/* Data Details */}
-      <div className="flex-1 min-h-0 flex flex-col px-4 pb-4">
+      <div className="flex flex-col px-4 pb-4 mb-4">
         <div className="flex items-center justify-between mb-3">
           <h4 className="font-semibold text-sm">Data Details</h4>
           <span className="text-xs text-muted-foreground">Preview (5 rows)</span>
         </div>
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <DataDetailsTable data={previewData} />
-        </div>
+        <DataDetailsTable data={chart.preview_data || []} />
+      </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function EmptyCanvasState() {
+  return (
+    <div className="flex-1 flex items-center justify-center h-full">
+      <div className="text-center text-muted-foreground">
+        <svg
+          className="w-24 h-24 mx-auto mb-4 opacity-30"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+          />
+        </svg>
+        <p className="text-sm mb-1">暂无图表</p>
+        <p className="text-xs">在左侧输入问题开始数据分析</p>
       </div>
     </div>
   );

@@ -18,6 +18,17 @@ export interface File {
   uploadedAt: string;
 }
 
+// User file type (from Supabase)
+export interface UserFile {
+  id: string;
+  name: string;
+  size: number;
+  uploadedAt: string;
+  url?: string;
+  rowCount?: number;
+  columnCount?: number;
+}
+
 // Message types
 export interface Message {
   id: string;

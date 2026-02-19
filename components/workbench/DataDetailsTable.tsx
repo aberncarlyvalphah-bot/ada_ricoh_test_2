@@ -135,7 +135,7 @@ export default function DataDetailsTable({ data }: DataDetailsTableProps) {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       {/* Stats and Actions */}
       <div className="flex items-center justify-between mb-3 gap-4 flex-wrap">
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -178,7 +178,7 @@ export default function DataDetailsTable({ data }: DataDetailsTableProps) {
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden flex-1 overflow-auto">
+      <div className="border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>

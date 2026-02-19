@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Upload, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -11,105 +11,110 @@ export interface FileUpload {
   error?: string;
 }
 
+export interface FileUploaderProps {
+  onFilesSelected: (files: File[]) => void;
+  disabled?: boolean;
+  multiple?: boolean;
+}
+
 export default function FileUploader({
-  onFileUploaded,
-}: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onFileUploaded: (file: File, data: any[]) => void;
-}) {
+  onFilesSelected,
+  disabled = false,
+  multiple = true,
+}: FileUploaderProps) {
   const [dragActive, setDragActive] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'completed' | 'error'>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [error, setError] = useState<string | undefined>();
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const handleUpload = useCallback(async (files: File[]) => {
+    if (files.length === 0) return;
 
-  const validateAndUploadFile = (file: File) => {
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      setUploadStatus('error');
-      alert(`文件过大！最大支持 ${MAX_FILE_SIZE / (1024 * 1024)} MB`);
-      return;
-    }
-
-    // Validate file type
-    const fileName = file.name.toLowerCase();
-    const isCSV = fileName.endsWith('.csv');
-    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
-
-    if (!isCSV && !isExcel) {
-      setUploadStatus('error');
-      alert('仅支持 CSV 和 Excel 文件！');
-      return;
-    }
-
-    // Simulate upload process
+    // Pass files to parent for actual upload
     setUploadStatus('uploading');
     setUploadProgress(0);
+    setError(undefined);
 
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => Math.min(prev + 10, 100));
-    }, 100);
-
-    setTimeout(() => {
-      clearInterval(interval);
-      setUploadProgress(100);
+    try {
+      await onFilesSelected(files);
       setUploadStatus('completed');
-
-      // Parse and return mock data
-      const mockData = [
-        { 科目: '语文', 成绩: 85 },
-        { 科目: '数学', 成绩: 92 },
-        { 科目: '英语', 成绩: 88 },
-        { 科目: '物理', 成绩: 78 },
-        { 科目: '化学', 成绩: 82 },
-        { 科目: '生物', 成绩: 75 },
-        { 科目: '历史', 成绩: 90 },
-      ];
-
-      onFileUploaded(file, mockData);
-    }, 2000);
-  };
+      setUploadProgress(100);
+    } catch (err) {
+      setUploadStatus('error');
+      setError(err instanceof Error ? err.message : '上传失败');
+    }
+  }, [onFilesSelected]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setDragActive(true);
-  }, []);
+    e.stopPropagation();
+    if (!disabled) setDragActive(true);
+  }, [disabled]);
 
-  const handleDragLeave = useCallback(() => {
-    setDragActive(false);
-  }, []);
-
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setDragActive(false);
 
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      const file = files[0];
-      validateAndUploadFile(file);
-    }
-  };
+    if (disabled) return;
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    handleUpload(droppedFiles);
+  }, [disabled, handleUpload]);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      const file = files[0];
-      validateAndUploadFile(file);
+      const fileList = Array.from(files);
+      handleUpload(fileList);
     }
-  };
+
+    // Reset input value to allow selecting the same file again
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
+  }, [handleUpload]);
+
+  const triggerFileSelect = useCallback(() => {
+    if (!disabled && inputRef.current) {
+      inputRef.current.click();
+    }
+  }, [disabled]);
 
   return (
     <div className="border-2 border-dashed rounded-lg p-6">
       <input
+        ref={inputRef}
         type="file"
+        id="file-upload-input"
         accept=".csv,.xlsx,.xls"
         onChange={handleFileSelect}
-        className="hidden"
-        id="file-upload"
+        style={{
+          position: 'absolute',
+          width: '0.1px',
+          height: '0.1px',
+          opacity: '0',
+          overflow: 'hidden',
+          zIndex: '-1',
+        }}
+        multiple={multiple}
       />
-      <label
-        htmlFor="file-upload"
-        className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${dragActive ? 'border-primary bg-primary/5 text-primary' : 'border-gray-300 hover:border-primary/50'}`}
+      <div
+        onClick={triggerFileSelect}
+        className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+          dragActive
+            ? 'border-primary bg-primary/5 text-primary'
+            : disabled
+              ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
+              : 'border-gray-300 hover:border-primary/50'
+        }`}
         onDragEnter={handleDrag}
         onDragOver={handleDrag}
         onDragLeave={handleDragLeave}
@@ -119,10 +124,10 @@ export default function FileUploader({
           <>
             <Upload className="h-12 w-12 text-muted-foreground mb-2" />
             <p className="text-sm font-medium text-center mb-1">
-              拖放文件到此处
+              点击或拖放文件到此处
             </p>
             <p className="text-xs text-muted-foreground text-center">
-              支持 CSV 或 Excel 文件（最大 10MB）
+              支持 CSV、Excel 文件（最大 10MB，单次最多 {multiple ? '5 个' : '1 个'}）
             </p>
           </>
         )}
@@ -153,15 +158,26 @@ export default function FileUploader({
             <div className="h-12 w-12 rounded-full bg-red-500 flex items-center justify-center text-white">
               <X className="h-6 w-6" />
             </div>
-            <p className="text-sm text-center font-medium text-red-600">
+            <p className="text-sm text-center font-medium text-red-600 mb-2">
               上传失败
             </p>
-            <Button onClick={() => setUploadStatus('idle')} className="mx-auto">
+            {error && (
+              <p className="text-xs text-red-500 text-center max-w-sm">
+                {error}
+              </p>
+            )}
+            <Button
+              onClick={() => {
+                setUploadStatus('idle');
+                setError(undefined);
+              }}
+              className="mx-auto"
+            >
               重试
             </Button>
           </div>
         )}
-      </label>
+      </div>
     </div>
   );
 }

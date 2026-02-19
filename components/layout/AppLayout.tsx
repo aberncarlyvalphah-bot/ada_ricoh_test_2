@@ -4,13 +4,14 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 
 interface AppLayoutProps {
   children: ReactNode;
+  onUploadComplete?: (uploadedFile: { id: string; name: string; size: number; rowCount?: number; columnCount?: number }) => void;
 }
 
-export default function AppLayout({ children }: AppLayoutProps) {
+export default function AppLayout({ children, onUploadComplete }: AppLayoutProps) {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <TooltipProvider>
-        <Sidebar />
+        <Sidebar onUploadComplete={onUploadComplete} />
         <main className="flex-1 overflow-hidden">
           {children}
         </main>

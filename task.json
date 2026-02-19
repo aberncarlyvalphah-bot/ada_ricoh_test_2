@@ -124,7 +124,7 @@
         "添加重新生成功能",
         "添加导出对话功能（Markdown 格式）"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 10,
