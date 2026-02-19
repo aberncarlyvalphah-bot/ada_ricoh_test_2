@@ -284,3 +284,38 @@
 - 文件解析工具已就绪，支持 CSV 文件解析
 - Excel 解析需要额外库，已在步骤中标注
 - 组件已集成 lucide-react 图标，视觉效果良好
+
+## 2026-02-19 - Task 8 v0.0.5: 饼图样式优化 + 文件上传按钮修复
+
+### What was done:
+- 优化饼图样式：
+  - 添加专业配色方案（每色系 5 种渐变：Deep、Medium、Light、Pale、Very Pale）
+  - 添加 emphasis 高亮效果（shadowBlur、shadowOffset、scale、label）
+  - 优化标签线样式（smooth、width、length、lineStyle）
+  - 改进 tooltip 文本样式（textStyle、fontSize、fontWeight、color）
+
+- 修复文件上传按钮：
+  - 使用 useRef 引用隐藏的 input 元素
+  - 添加文件类型验证（CSV、Excel）
+  - 添加文件大小限制（10 MB）
+  - 改进提示信息（文件名、大小、格式）
+  - 替换 Plus 图标为 Upload 图标
+
+### Testing:
+- ✅ npm run lint 通过
+- ✅ npm run build 成功
+- ✅ 饼图 3 色配色方案全部测试通过
+- ✅ 颜色切换功能正常工作
+- ✅ 文件上传按钮在首页和 workbench 都能正常点击
+- ✅ 配置面板展开/折叠正常
+
+### Notes:
+- 饼图使用 ECharts 配置：radius、itemStyle、emphasis
+- 颜色方案：blue、green、red、purple、orange、cyan 系列
+- 文件上传使用隐藏 input + click 触发
+- 所有图表类型（6 种）可正确切换和显示
+
+---
+
+## 2026-02-19 - Task 8: 添加图表类型扩展
+
