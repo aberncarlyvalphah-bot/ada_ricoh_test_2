@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react';
 import { Upload, X, FileSpreadsheet, FileText, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 
 export interface FileUpload {
   file: File;

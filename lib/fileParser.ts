@@ -6,13 +6,7 @@ export function parseCSV(file: File): Promise<Record<string, string>[]> {
       const text = e.target.result as string;
       const lines = text.split('\n');
       const headers = lines[0].split(',');
-      const data = lines.slice(1).map((line, index) => {
-        const values = line.split(',');
-        return headers.reduce((obj, header, i) => {
-          obj[header.trim()] = values[i]?.trim() || '';
-          return obj;
-        }, {} as Record<string, string>);
-      });
+      const data = lines.slice(1).map((line) => line.split(',').map(values => values.split(','));
 
       resolve(data);
     };
