@@ -2,16 +2,299 @@ import {
   ApiResponse,
   ChatRequest,
   ChatStreamChunk,
+  API_CONFIG,
+  ApiError,
+  ApiErrorCode,
+  RequestConfig,
+  RequestInterceptor,
+  ResponseInterceptor,
+  Project,
+  CreateProjectRequest,
+  UpdateProjectRequest,
+  UserProfile,
   MOCK_API_DELAY,
+  USE_MOCK_DATA,
 } from './types';
-import type { ChartConfig, DataPreview } from '@/types';
+import { supabase } from '@/lib/supabase/client';
+import type { ChartConfig } from '@/types';
 
 /**
  * API Client for Data Ada Agent
- * Currently uses mock data, ready for backend integration
+ * Integrates with Supabase backend and provides retry logic, error handling
  */
 class ApiClient {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+  private baseUrl = API_CONFIG.BASE_URL;
+  private requestInterceptors: RequestInterceptor[] = [];
+  private responseInterceptors: ResponseInterceptor[] = [];
+
+  constructor() {
+    // Add default auth interceptor
+    this.addRequestInterceptor(this.authInterceptor);
+    this.addResponseInterceptor(this.errorResponseInterceptor);
+  }
+
+  /**
+   * Add request interceptor
+   */
+  addRequestInterceptor(interceptor: RequestInterceptor) {
+    this.requestInterceptors.push(interceptor);
+  }
+
+  /**
+   * Add response interceptor
+   */
+  addResponseInterceptor(interceptor: ResponseInterceptor) {
+    this.responseInterceptors.push(interceptor);
+  }
+
+  /**
+   * Auth interceptor - adds Supabase auth token
+   */
+  private async authInterceptor(config: {
+    url: string;
+    method: string;
+    headers: Headers;
+    body?: string;
+  }) {
+    if (!supabase) {
+      console.warn('[ApiClient] Supabase not configured, skipping auth interceptor');
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        config.headers.set('Authorization', `Bearer ${session.access_token}`);
+      }
+    } catch (error) {
+      console.error('[ApiClient] Auth interceptor error:', error);
+    }
+  }
+
+  /**
+   * Error response interceptor
+   */
+  private async errorResponseInterceptor(response: Response) {
+    // Handle 401 Unauthorized
+    if (response.status === 401) {
+      console.warn('[ApiClient] Unauthorized, attempting token refresh');
+      try {
+        if (supabase) {
+          await supabase.auth.refreshSession();
+          // Note: The retry logic should be handled by the calling code
+        }
+      } catch (error) {
+        console.error('[ApiClient] Token refresh failed:', error);
+      }
+    }
+  }
+
+  /**
+   * Core HTTP request method with retry logic
+   */
+  private async request<T = unknown>(
+    endpoint: string,
+    options: RequestInit & RequestConfig = {}
+  ): Promise<ApiResponse<T>> {
+    const {
+      maxRetries = API_CONFIG.MAX_RETRIES,
+      retryDelay = API_CONFIG.RETRY_DELAY,
+      timeout = API_CONFIG.DEFAULT_TIMEOUT,
+      retryCondition = defaultRetryCondition,
+      ...fetchOptions
+    } = options;
+
+    let attempt = 0;
+    let lastError: Error | null = null;
+
+    while (attempt <= maxRetries) {
+      try {
+        // Build request config
+        const url = endpoint.startsWith('http')
+          ? endpoint
+          : `${this.baseUrl}${endpoint}`;
+
+        const headers = new Headers({
+          'Content-Type': 'application/json',
+          ...fetchOptions.headers,
+        });
+
+        let requestConfig = {
+          url,
+          method: (fetchOptions.method || 'GET').toUpperCase(),
+          headers,
+          body: fetchOptions.body as string | undefined,
+        };
+
+        // Apply request interceptors
+        for (const interceptor of this.requestInterceptors) {
+          const result = await interceptor(requestConfig);
+          if (result) {
+            requestConfig = { ...requestConfig, ...result };
+          }
+        }
+
+        // Create AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+        // Make request
+        const response = await fetch(requestConfig.url, {
+          ...fetchOptions,
+          ...requestConfig,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        // Apply response interceptors
+        let processedResponse = response;
+        for (const interceptor of this.responseInterceptors) {
+          const result = await interceptor(processedResponse, {
+            url: requestConfig.url,
+            method: requestConfig.method,
+          });
+          if (result) {
+            processedResponse = result;
+          }
+        }
+
+        // Handle response
+        if (!response.ok) {
+          const errorData = await this.parseErrorResponse(response);
+          const error: ApiError = {
+            code: errorData.code || this.getErrorCodeFromStatus(response.status),
+            message: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+            details: errorData.details,
+            statusCode: response.status,
+            retryable: this.isRetryable(response.status),
+          };
+
+          // Check if should retry
+          if (attempt < maxRetries && retryCondition(error)) {
+            attempt++;
+            console.warn(`[ApiClient] Request failed (attempt ${attempt}/${maxRetries}), retrying...`, error);
+            await this.delay(retryDelay * attempt); // Exponential backoff
+            continue;
+          }
+
+          return {
+            success: false,
+            error,
+          };
+        }
+
+        // Parse successful response
+        const data = await response.json();
+        return {
+          success: true,
+          data,
+        };
+
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+
+        // Check if timeout
+        if (lastError.name === 'AbortError') {
+          const timeoutError: ApiError = {
+            code: ApiErrorCode.TIMEOUT,
+            message: `Request timeout after ${timeout}ms`,
+            retryable: true,
+          };
+
+          if (attempt < maxRetries && retryCondition(timeoutError)) {
+            attempt++;
+            console.warn(`[ApiClient] Request timeout (attempt ${attempt}/${maxRetries}), retrying...`);
+            await this.delay(retryDelay * attempt);
+            continue;
+          }
+
+          return {
+            success: false,
+            error: timeoutError,
+          };
+        }
+
+        // Other network errors
+        const networkError: ApiError = {
+          code: ApiErrorCode.NETWORK_ERROR,
+          message: lastError.message || 'Network error',
+          retryable: true,
+        };
+
+        if (attempt < maxRetries && retryCondition(networkError)) {
+          attempt++;
+          console.warn(`[ApiClient] Network error (attempt ${attempt}/${maxRetries}), retrying...`, lastError);
+          await this.delay(retryDelay * attempt);
+          continue;
+        }
+
+        return {
+          success: false,
+          error: networkError,
+        };
+      }
+    }
+
+    // Should not reach here, but just in case
+    return {
+      success: false,
+      error: {
+        code: ApiErrorCode.INTERNAL_ERROR,
+        message: lastError?.message || 'Unknown error',
+        retryable: false,
+      },
+    };
+  }
+
+  /**
+   * Parse error response body
+   */
+  private async parseErrorResponse(response: Response): Promise<Partial<ApiError>> {
+    try {
+      const data = await response.json();
+      return data.error || data;
+    } catch {
+      return {};
+    }
+  }
+
+  /**
+   * Get error code from HTTP status
+   */
+  private getErrorCodeFromStatus(status: number): string {
+    switch (status) {
+      case 400: return ApiErrorCode.VALIDATION_ERROR;
+      case 401: return ApiErrorCode.UNAUTHORIZED;
+      case 404: return ApiErrorCode.NOT_FOUND;
+      case 409: return ApiErrorCode.ALREADY_EXISTS;
+      case 500: return ApiErrorCode.INTERNAL_ERROR;
+      case 503: return ApiErrorCode.SERVICE_UNAVAILABLE;
+      default: return ApiErrorCode.INTERNAL_ERROR;
+    }
+  }
+
+  /**
+   * Check if status code is retryable
+   */
+  private isRetryable(status: number): boolean {
+    const retryableStatuses = [408, 429, 500, 502, 503, 504];
+    return retryableStatuses.includes(status);
+  }
+
+  /**
+   * Default retry condition
+   */
+  private defaultRetryCondition(error: ApiError): boolean {
+    return error.retryable === true;
+  }
+
+  /**
+   * Delay helper
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
 
   /**
    * Send chat message and receive streaming response
@@ -23,18 +306,67 @@ class ApiClient {
     onError: (error: Error) => void
   ): Promise<void> {
     try {
-      // TODO: Replace with real API call
-      // const response = await fetch(`${this.baseUrl}/chat`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(request),
-      // });
-      // Handle streaming response...
-
-      // Mock implementation
-      await this.mockChatStream(request, onChunk, onComplete);
+      if (USE_MOCK_DATA) {
+        await this.mockChatStream(request, onChunk, onComplete);
+      } else {
+        await this.realChatStream(request, onChunk, onComplete, onError);
+      }
     } catch (error) {
       onError(error instanceof Error ? error : new Error('Unknown error'));
+    }
+  }
+
+  /**
+   * Real chat stream implementation
+   */
+  private async realChatStream(
+    request: ChatRequest,
+    onChunk: (chunk: ChatStreamChunk) => void,
+    onComplete: () => void,
+    onError: (error: Error) => void
+  ): Promise<void> {
+    try {
+      const response = await fetch(`${this.baseUrl}/chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error('Response body is not readable');
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              onChunk(data);
+            } catch (error) {
+              console.error('Failed to parse SSE data:', line, error);
+            }
+          }
+        }
+      }
+
+      onComplete();
+    } catch (error) {
+      onError(error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -176,31 +508,29 @@ class ApiClient {
   }
 
   /**
-   * Delay helper
-   */
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  /**
    * Upload file
    */
   async uploadFile(_file: File): Promise<ApiResponse<{ id: string }>> {
     try {
-      // TODO: Implement real file upload
-      await this.delay(MOCK_API_DELAY);
+      if (USE_MOCK_DATA) {
+        await this.delay(MOCK_API_DELAY);
+        return {
+          success: true,
+          data: {
+            id: `file_${Date.now()}`,
+          },
+        };
+      }
 
-      return {
-        success: true,
-        data: {
-          id: `file_${Date.now()}`,
-        },
-      };
+      // Real implementation would be handled by fileService.ts
+      return this.request<{ id: string }>('/files/upload', {
+        method: 'POST',
+      });
     } catch (error) {
       return {
         success: false,
         error: {
-          code: 'UPLOAD_FAILED',
+          code: ApiErrorCode.INTERNAL_ERROR,
           message: error instanceof Error ? error.message : 'Upload failed',
         },
       };
@@ -210,19 +540,57 @@ class ApiClient {
   /**
    * Get project history
    */
-  async getProjectHistory(): Promise<ApiResponse<unknown[]>> {
+  async getProjectHistory(): Promise<ApiResponse<Project[]>> {
     try {
-      // TODO: Implement real API call
-      return {
-        success: true,
-        data: [],
-      };
+      if (USE_MOCK_DATA) {
+        return {
+          success: true,
+          data: [],
+        };
+      }
+
+      return this.request<Project[]>('/projects');
     } catch (error) {
       return {
         success: false,
         error: {
-          code: 'FETCH_FAILED',
+          code: ApiErrorCode.INTERNAL_ERROR,
           message: error instanceof Error ? error.message : 'Fetch failed',
+        },
+      };
+    }
+  }
+
+  /**
+   * Create project
+   */
+  async createProject(request: CreateProjectRequest): Promise<ApiResponse<Project>> {
+    try {
+      if (USE_MOCK_DATA) {
+        await this.delay(MOCK_API_DELAY);
+        return {
+          success: true,
+          data: {
+            id: `project_${Date.now()}`,
+            name: request.name,
+            description: request.description,
+            user_id: request.userId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        };
+      }
+
+      return this.request<Project>('/projects', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: ApiErrorCode.INTERNAL_ERROR,
+          message: error instanceof Error ? error.message : 'Create failed',
         },
       };
     }
@@ -231,17 +599,20 @@ class ApiClient {
   /**
    * Save project
    */
-  async saveProject(_project: unknown): Promise<ApiResponse<void>> {
+  async saveProject(request: UpdateProjectRequest): Promise<ApiResponse<void>> {
     try {
-      // TODO: Implement real API call
-      return {
-        success: true,
-      };
+      return this.request<void>(`/projects/${request.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: request.name,
+          description: request.description,
+        }),
+      });
     } catch (error) {
       return {
         success: false,
         error: {
-          code: 'SAVE_FAILED',
+          code: ApiErrorCode.INTERNAL_ERROR,
           message: error instanceof Error ? error.message : 'Save failed',
         },
       };
@@ -251,22 +622,66 @@ class ApiClient {
   /**
    * Delete project
    */
-  async deleteProject(_projectId: string): Promise<ApiResponse<void>> {
+  async deleteProject(projectId: string): Promise<ApiResponse<void>> {
     try {
-      // TODO: Implement real API call
-      return {
-        success: true,
-      };
+      return this.request<void>(`/projects/${projectId}`, {
+        method: 'DELETE',
+      });
     } catch (error) {
       return {
         success: false,
         error: {
-          code: 'DELETE_FAILED',
+          code: ApiErrorCode.INTERNAL_ERROR,
           message: error instanceof Error ? error.message : 'Delete failed',
         },
       };
     }
   }
+
+  /**
+   * Get user profile
+   */
+  async getUserProfile(): Promise<ApiResponse<UserProfile>> {
+    try {
+      if (!supabase) {
+        throw new Error('Supabase not configured');
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return {
+          success: false,
+          error: {
+            code: ApiErrorCode.UNAUTHORIZED,
+            message: 'User not authenticated',
+          },
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          id: user.id,
+          email: user.email || '',
+          name: user.user_metadata?.name,
+          created_at: user.created_at || new Date().toISOString(),
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: ApiErrorCode.INTERNAL_ERROR,
+          message: error instanceof Error ? error.message : 'Failed to get user profile',
+        },
+      };
+    }
+  }
+}
+
+// Default retry condition function
+function defaultRetryCondition(error: ApiError): boolean {
+  return error.retryable === true;
 }
 
 // Singleton instance

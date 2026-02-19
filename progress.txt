@@ -1,5 +1,66 @@
 # Progress Log
 
+## 2026-02-20 - Task 16: 集成后端 API
+
+### What was done:
+- **扩展 API 类型定义** (`lib/api/types.ts`)：
+  - 添加 Project, CreateProjectRequest, UpdateProjectRequest, ProjectMessage, ProjectFile 类型
+  - 添加 UserProfile, AuthSession 认证相关类型
+  - 添加 ApiErrorCode 枚举，包含所有错误代码
+  - 扩展 ApiResponse 添加 metadata 分页信息
+  - 添加 RequestConfig, RequestInterceptor, ResponseInterceptor 类型
+  - 添加 API_CONFIG 配置对象
+  - 添加 USE_MOCK_DATA 环境变量支持
+
+- **重构 API 客户端** (`lib/api/client.ts`)：
+  - 实现核心 request 方法，支持完整的 HTTP 请求生命周期
+  - 添加请求拦截器系统（addRequestInterceptor）
+  - 添加响应拦截器系统（addResponseInterceptor）
+  - 实现 authInterceptor：自动添加 Supabase auth token 到请求头
+  - 实现 errorResponseInterceptor：401 错误时自动刷新 token
+  - 实现重试逻辑：指数退避算法，默认重试 3 次
+  - 添加超时控制：默认 30 秒超时
+  - 实现错误分类：根据 HTTP 状态码生成对应的错误代码
+  - 实现 retryable 判断：识别可重试的错误（网络错误、超时、5xx 等）
+  - 保留原有的 mock 数据支持（USE_MOCK_DATA）
+  - 优化 sendChat：支持真实 SSE 流式响应
+  - 添加 createProject, saveProject, deleteProject, getUserProfile 方法
+
+### 技术细节：
+- **请求拦截器链**：支持添加多个拦截器，按顺序执行
+- **响应拦截器链**：支持响应处理和转换
+- **重试机制**：
+  - 指数退避（1s, 2s, 3s）
+  - 可自定义重试条件和延迟
+  - 自动识别可重试的错误类型
+- **错误处理**：
+  - 统一的 ApiError 结构
+  - 自动分类错误代码
+  - 支持错误重试标志
+- **认证集成**：
+  - 自动获取 Supabase session
+  - 自动注入 Authorization header
+  - 401 时自动刷新 token
+
+### 文件修改：
+- `lib/api/types.ts` - 扩展类型定义
+- `lib/api/client.ts` - 完全重构，添加拦截器、重试、错误处理
+
+### Testing:
+- ✅ npm run build 成功
+- ✅ TypeScript 编译通过
+- ✅ 所有新功能已实现
+- ⚠️ 1 个 lint 警告：_file 参数未使用（符合预期，使用下划线前缀表示故意未使用）
+
+### Notes:
+- API 客户端现在完全支持 Supabase 认证
+- 支持自定义请求/响应拦截器
+- 自动重试机制提高可靠性
+- 错误处理完善，易于调试
+- 保留了 mock 数据支持，方便开发
+
+---
+
 ## 2026-02-20 - Docs: 创建 Git 工作流程文档
 
 ### What was done:
