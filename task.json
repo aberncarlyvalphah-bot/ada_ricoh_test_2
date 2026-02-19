@@ -1,0 +1,255 @@
+{
+  "project": "Data Ada Agent",
+  "description": "AI-powered data analysis and visualization platform",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "项目基础设施验证",
+      "description": "验证项目当前状态和开发环境",
+      "steps": [
+        "验证 package.json 中的依赖已正确安装",
+        "确认开发服务器能够正常启动",
+        "验证首页 / 能够正确加载和渲染",
+        "验证 workbench 页面 /project/[id] 能够正确显示",
+        "确认 ECharts 和相关依赖已安装",
+        "验证 Tailwind CSS 配置正确"
+      ],
+      "passes": true
+    },
+    {
+      "id": 2,
+      "title": "修复 Sidebar 导航路径",
+      "description": "修复 Sidebar 中项目导航路径错误",
+      "steps": [
+        "修改 components/layout/Sidebar.tsx 中的导航路径",
+        "将 /workbench/${id} 改为 /project/${id}",
+        "更新 active 状态判断路径",
+        "验证点击项目能正确跳转到 workbench 页面"
+      ],
+      "passes": true
+    },
+    {
+      "id": 3,
+      "title": "修复 CanvasPanel 视觉问题",
+      "description": "修复图表展示和输入框的视觉细节问题",
+      "steps": [
+        "移除 CanvasPanel 的 bg-gray-50/50 背景",
+        "调整 padding 以匹配 ChatPanel 风格",
+        "修复雷达图图例与标签重叠问题",
+        "调整 ECharts 配置（legend bottom, center, radius）",
+        "增加图表容器高度从 h-80 到 h-96",
+        "添加 TooltipProvider 到 workbench 页面"
+      ],
+      "passes": true
+    },
+    {
+      "id": 4,
+      "title": "修复 ChatInput 输入框大小",
+      "description": "修复输入框太小的问题",
+      "steps": [
+        "增加 ChatInput 组件 textarea 的 rows 从 2 到 4",
+        "移除 max-w-2xl 宽度限制",
+        "验证输入框在 workbench 页面有足够空间"
+      ],
+      "passes": true
+    },
+    {
+      "id": 5,
+      "title": "项目结构优化",
+      "description": "优化项目目录结构，添加必要的工具函数",
+      "steps": [
+        "检查并完善 lib/utils.ts 工具函数",
+        "确保 types/index.ts 包含所有必要的类型定义",
+        "验证组件导入路径正确",
+        "检查是否有循环依赖问题"
+      ],
+      "passes": true
+    },
+    {
+      "id": 6,
+      "title": "添加数据文件上传功能",
+      "description": "实现用户上传 CSV/Excel 文件进行分析",
+      "steps": [
+        "创建 components/upload/FileUploader.tsx 上传组件",
+        "实现拖放上传功能",
+        "实现文件类型验证（CSV, Excel）",
+        "添加文件大小限制（最大 10MB）",
+        "显示上传进度条",
+        "创建 lib/utils/fileParser.ts 文件解析工具",
+        "实现 CSV 文件解析",
+        "实现 Excel 文件解析（使用 xlsx 库）",
+        "验证解析后的数据结构正确"
+      ],
+      "passes": false
+    },
+    {
+      "id": 7,
+      "title": "实现数据预览功能",
+      "description": "在上传后显示数据预览表格",
+      "steps": [
+        "扩展 DataDetailsTable 组件支持更多行",
+        "添加分页功能",
+        "添加排序和筛选功能",
+        "实现列宽可调整",
+        "显示数据统计信息（总行数、列数）",
+        "添加导出数据按钮（CSV 格式）"
+      ],
+      "passes": false
+    },
+    {
+      "id": 8,
+      "title": "添加图表类型扩展",
+      "description": "增加更多图表类型支持",
+      "steps": [
+        "添加折线图（line chart）已实现",
+        "添加柱状图（bar chart）已实现",
+        "添加饼图（pie chart）",
+        "添加散点图（scatter chart）",
+        "添加热力图（heatmap）",
+        "实现图表配置面板（颜色、标签等）",
+        "确保所有图表类型能正确切换和显示"
+      ],
+      "passes": false
+    },
+    {
+      "id": 9,
+      "title": "实现 AI 对话功能",
+      "description": "实现与 AI 的对话交互",
+      "steps": [
+        "创建 lib/ai/chat.ts 对话封装",
+        "实现消息发送 API",
+        "实现流式响应处理",
+        "添加 loading 状态显示",
+        "实现消息历史记录",
+        "添加重新生成功能",
+        "添加导出对话功能（Markdown 格式）"
+      ],
+      "passes": false
+    },
+    {
+      "id": 10,
+      "title": "实现项目持久化",
+      "description": "实现项目和会话的本地存储",
+      "steps": [
+        "使用 localStorage 存储项目列表",
+        "实现项目创建、更新、删除",
+        "实现会话历史存储",
+        "添加数据导入/导出功能",
+        "实现自动保存功能",
+        "添加数据清理机制"
+      ],
+      "passes": false
+    },
+    {
+      "id": 11,
+      "title": "响应式设计优化",
+      "description": "优化移动端和平板设备的显示",
+      "steps": [
+        "优化首页响应式布局",
+        "优化 workbench 页面 30%/70% 分割在移动端",
+        "调整 ECharts 在小屏幕的显示",
+        "优化输入框在小屏幕上的布局",
+        "测试不同屏幕尺寸（手机、平板、桌面）",
+        "添加移动端汉堡菜单（如果需要）"
+      ],
+      "passes": false
+    },
+    {
+      "id": 12,
+      "title": "添加主题切换功能",
+      "description": "实现亮色/暗色主题切换",
+      "steps": [
+        "创建 hooks/useTheme.ts 状态管理",
+        "实现主题切换函数",
+        "添加主题切换按钮到 Sidebar",
+        "确保所有组件支持主题切换",
+        "保存主题偏好到 localStorage",
+        "使用 CSS 变量定义主题颜色"
+      ],
+      "passes": false
+    },
+    {
+      "id": 13,
+      "title": "添加错误处理和加载状态",
+      "description": "完善错误处理和 loading 状态",
+      "steps": [
+        "创建 components/ui/LoadingSpinner.tsx",
+        "创建 components/ui/ErrorBoundary.tsx",
+        "创建 app/error.tsx 全局错误页面",
+        "创建 app/loading.tsx 全局加载页面",
+        "添加 Toast 通知组件",
+        "实现统一的错误处理逻辑"
+      ],
+      "passes": false
+    },
+    {
+      "id": 14,
+      "title": "性能优化",
+      "description": "优化应用性能和加载速度",
+      "steps": [
+        "实现图片懒加载",
+        "优化 ECharts 渲染性能",
+        "使用 React.memo 优化组件",
+        "添加代码分割（code splitting）",
+        "优化 bundle 大小",
+        "添加性能监控"
+      ],
+      "passes": false
+    },
+    {
+      "id": 15,
+      "title": "添加无障碍支持",
+      "description": "提升应用的无障碍性",
+      "steps": [
+        "添加 ARIA 标签",
+        "实现键盘导航支持",
+        "添加屏幕阅读器支持",
+        "优化颜色对比度",
+        "添加焦点指示器",
+        "确保所有交互可通过键盘完成"
+      ],
+      "passes": false
+    },
+    {
+      "id": 16,
+      "title": "集成后端 API",
+      "description": "准备后端 API 集成",
+      "steps": [
+        "创建 lib/api/client.ts API 客户端封装",
+        "实现错误处理和重试逻辑",
+        "实现请求拦截器（添加认证 token）",
+        "创建 API 类型定义",
+        "添加 API 响应数据转换"
+      ],
+      "passes": false
+    },
+    {
+      "id": 17,
+      "title": "添加数据导出功能",
+      "description": "支持导出图表和数据",
+      "steps": [
+        "实现导出图表为图片（PNG, SVG）",
+        "实现导出数据为 CSV/Excel",
+        "创建导出配置面板",
+        "添加导出历史记录",
+        "实现批量导出功能"
+      ],
+      "passes": false
+    },
+    {
+      "id": 18,
+      "title": "最终测试和部署准备",
+      "description": "完整的端到端测试和优化",
+      "steps": [
+        "运行 npm run lint 检查代码规范",
+        "运行 npm run build 确保构建成功",
+        "测试所有主要用户流程",
+        "测试文件上传 → 数据预览 → 生成图表 → 导出",
+        "测试错误处理和边界情况",
+        "优化 SEO 和 metadata",
+        "准备生产环境配置"
+      ],
+      "passes": false
+    }
+  ]
+}

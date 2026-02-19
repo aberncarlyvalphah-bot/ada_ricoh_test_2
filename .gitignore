@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Project specific
+automation-logs/
+screenshots/
+workbench-screenshot.png
+*.log
+
+# Environment
+.env.local
