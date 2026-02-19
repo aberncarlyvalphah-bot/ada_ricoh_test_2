@@ -57,16 +57,41 @@ export default function Sidebar() {
 
       {/* Projects */}
       <div className="px-3 pt-4 flex-1 overflow-y-auto">
-        <button
-          onClick={() => setProjectsOpen(!projectsOpen)}
-          className="flex items-center justify-between w-full px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+        <div
+          className="flex items-center justify-between w-full px-3 py-1.5"
         >
-          <span>Project</span>
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Project</span>
           <div className="flex items-center gap-1.5">
-            <Plus className="h-3 w-3" />
-            <ChevronDown className={cn("h-3 w-3 transition-transform", !projectsOpen && "-rotate-90")} />
+            <button
+              onClick={() => {
+                // Trigger file upload
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.csv,.xlsx,.xls';
+                input.onchange = (e) => {
+                  const target = e.target as HTMLInputElement;
+                  if (target.files && target.files.length > 0) {
+                    const file = target.files[0];
+                    console.log('File selected:', file.name);
+                    // TODO: Implement file upload logic
+                    alert(`文件已选择: ${file.name}\n上传功能待实现`);
+                  }
+                };
+                input.click();
+              }}
+              className="p-1 hover:bg-accent/50 rounded transition-colors"
+              title="添加数据"
+            >
+              <Plus className="h-3 w-3" />
+            </button>
+            <button
+              onClick={() => setProjectsOpen(!projectsOpen)}
+              className="p-1 hover:bg-accent/50 rounded transition-colors"
+            >
+              <ChevronDown className={cn("h-3 w-3 transition-transform", !projectsOpen && "-rotate-90")} />
+            </button>
           </div>
-        </button>
+        </div>
 
         {projectsOpen && (
           <div className="mt-1 space-y-0.5">
