@@ -154,14 +154,13 @@ export default function DataDetailsTable({ data }: DataDetailsTableProps) {
       {/* Filter Controls */}
       <div className="flex items-center gap-2 mb-3">
         <Select
-          value={filterColumn}
+          value={filterColumn || undefined}
           onValueChange={(value) => handleFilterChange(value, filterValue)}
         >
           <SelectTrigger className="w-40">
             <SelectValue placeholder="选择列" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">全部列</SelectItem>
             {columns.map((col) => (
               <SelectItem key={col} value={col}>
                 {col}
