@@ -1,5 +1,31 @@
 # Progress Log
 
+## 2026-02-20 - Docs: 创建 Git 工作流程文档
+
+### What was done:
+- 创建 `GIT_WORKFLOW.md` 文档，规范项目 Git 工作流程
+- 记录每次迭代后必须推送到 GitHub 的操作流程
+- 包含标准 Git 命令和 Commit Message 格式规范
+- 记录 GitHub 推送配置信息（token 使用占位符避免泄露）
+
+### 文档内容要点：
+1. **标准工作流程**：代码修改 → 测试 → 更新 progress.txt → Git 提交 → 推送到 GitHub
+2. **Commit Message 格式**：使用 HEREDOC 格式，包含标题、修改内容、技术说明、相关文件
+3. **推送命令**：使用 Personal Access Token 进行认证
+4. **检查清单**：确保每次提交前的质量检查
+5. **重要提示**：重启终端后通过阅读 CLAUDE.md、progress.txt、GIT_WORKFLOW.md、task.json 恢复上下文
+
+### Testing:
+- ✅ 文档已创建
+- ✅ 推送到 GitHub 成功（commit: 9b9cbf1）
+
+### Notes:
+- 文档中使用占位符 `YOUR_GITHUB_TOKEN`，避免泄露真实 token
+- 每次迭代后必须遵循文档中的工作流程提交代码
+- 文档会帮助 Claude 重启后快速恢复工作流程记忆
+
+---
+
 ## 2026-02-19 - Fix: 修复文件上传包含中文字符时的错误（Invalid key）
 
 ### What was done:
