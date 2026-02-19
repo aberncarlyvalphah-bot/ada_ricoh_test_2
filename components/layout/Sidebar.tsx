@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { MessageSquarePlus, Database, FolderOpen, ChevronDown, FileSpreadsheet, BarChart3, LayoutDashboard, FileText, Table2, Plus, Sparkles } from 'lucide-react';
+import { MessageSquarePlus, Database, FolderOpen, ChevronDown, FileSpreadsheet, BarChart3, LayoutDashboard, FileText, Table2, Upload, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TaskMode } from '@/types';
 
@@ -30,6 +30,34 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [filesOpen, setFilesOpen] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const target = e.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+      const file = target.files[0];
+      console.log('File selected:', file.name, 'Size:', file.size);
+
+      // Validate file
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        alert(`❌ 文件过大！\n最大支持 10 MB\n当前文件大小: ${Math.round(file.size / 1024 / 1024)} MB`);
+        return;
+      }
+
+      const fileName = file.name.toLowerCase();
+      const isCSV = fileName.endsWith('.csv');
+      const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+
+      if (!isCSV && !isExcel) {
+        alert('❌ 不支持的文件格式！\n仅支持 CSV 或 Excel 文件 (.csv, .xlsx, .xls)');
+        return;
+      }
+
+      // TODO: Process and upload the file
+      alert(`✅ 文件已选择:\n\n文件名: ${file.name}\n大小: ${Math.round(file.size / 1024)} KB\n格式: ${isCSV ? 'CSV' : 'Excel'}\n\n文件正在解析...\n\n实际上传功能待实现`);
+    }
+  };
 
   return (
     <aside className="w-64 h-screen flex flex-col bg-sidebar border-r border-border shrink-0">
@@ -43,6 +71,15 @@ export default function Sidebar() {
           <span className="text-primary italic">A</span>da<span className="text-muted-foreground font-normal text-sm">.ai</span>
         </h1>
       </div>
+
+      {/* Hidden file input for upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".csv,.xlsx,.xls"
+        className="hidden"
+        onChange={handleFileUpload}
+      />
 
       {/* New Chat */}
       <div className="px-3 pt-3">
@@ -64,25 +101,15 @@ export default function Sidebar() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => {
-                // Trigger file upload
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = '.csv,.xlsx,.xls';
-                input.onchange = (e) => {
-                  const target = e.target as HTMLInputElement;
-                  if (target.files && target.files.length > 0) {
-                    const file = target.files[0];
-                    console.log('File selected:', file.name);
-                    // TODO: Implement file upload logic
-                    alert(`文件已选择: ${file.name}\n上传功能待实现`);
-                  }
-                };
-                input.click();
+                // Trigger file upload using ref
+                if (fileInputRef.current) {
+                  fileInputRef.current.click();
+                }
               }}
               className="p-1 hover:bg-accent/50 rounded transition-colors"
-              title="添加数据"
+              title="上传文件"
             >
-              <Plus className="h-3 w-3" />
+              <Upload className="h-3 w-3" />
             </button>
             <button
               onClick={() => setProjectsOpen(!projectsOpen)}

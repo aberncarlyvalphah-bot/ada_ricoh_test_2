@@ -101,6 +101,77 @@ export default function CanvasPanel() {
     { name: 'Cyan', color: '#06b6d4' },
   ];
 
+  // Professional color palettes for pie charts
+  const colorPalettes = {
+    blue: [
+      { name: 'Deep Blue', color: '#1e40af' },
+      { name: 'Medium Blue', color: '#3b82f6' },
+      { name: 'Light Blue', color: '#60a5fa' },
+      { name: 'Pale Blue', color: '#93c5fd' },
+      { name: 'Very Pale Blue', color: '#bfdbfe' },
+      { name: 'Extra Pale Blue', color: '#dbeafe' },
+    ],
+    green: [
+      { name: 'Deep Green', color: '#14532d' },
+      { name: 'Medium Green', color: '#22c55e' },
+      { name: 'Light Green', color: '#4ade80' },
+      { name: 'Pale Green', color: '#86efac' },
+      { name: 'Very Pale Green', color: '#bbf7d0' },
+      { name: 'Extra Pale Green', color: '#dcfce7' },
+    ],
+    red: [
+      { name: 'Deep Red', color: '#991b1b' },
+      { name: 'Medium Red', color: '#ef4444' },
+      { name: 'Light Red', color: '#f87171' },
+      { name: 'Pale Red', color: '#fca5a5' },
+      { name: 'Very Pale Red', color: '#fecaca' },
+      { name: 'Extra Pale Red', color: '#fee2e2' },
+    ],
+    purple: [
+      { name: 'Deep Purple', color: '#6b21a8' },
+      { name: 'Medium Purple', color: '#a855f7' },
+      { name: 'Light Purple', color: '#c084fc' },
+      { name: 'Pale Purple', color: '#d8b4fe' },
+      { name: 'Very Pale Purple', color: '#e9d5ff' },
+      { name: 'Extra Pale Purple', color: '#f3e8ff' },
+    ],
+    orange: [
+      { name: 'Deep Orange', color: '#9a3412' },
+      { name: 'Medium Orange', color: '#f97316' },
+      { name: 'Light Orange', color: '#fb923c' },
+      { name: 'Pale Orange', color: '#fdba74' },
+      { name: 'Very Pale Orange', color: '#fdba74' },
+      { name: 'Extra Pale Orange', color: '#ffedd5' },
+    ],
+    cyan: [
+      { name: 'Deep Cyan', color: '#0e7490' },
+      { name: 'Medium Cyan', color: '#06b6d4' },
+      { name: 'Light Cyan', color: '#22d3ee' },
+      { name: 'Pale Cyan', color: '#67e8f9' },
+      { name: 'Very Pale Cyan', color: '#a5f3fc' },
+      { name: 'Extra Pale Cyan', color: '#caf0f8' },
+    ],
+    rainbow: [
+      { name: 'Red', color: '#ef4444' },
+      { name: 'Orange', color: '#f97316' },
+      { name: 'Yellow', color: '#eab308' },
+      { name: 'Green', color: '#22c55e' },
+      { name: 'Blue', color: '#3b82f6' },
+      { name: 'Purple', color: '#a855f7' },
+    ],
+  };
+
+  // Get current palette based on selected color
+  const getCurrentPalette = () => {
+    if (chartConfig.color.startsWith('#3b')) return colorPalettes.blue;
+    if (chartConfig.color.startsWith('#22')) return colorPalettes.green;
+    if (chartConfig.color.startsWith('#ef')) return colorPalettes.red;
+    if (chartConfig.color.startsWith('#a8')) return colorPalettes.purple;
+    if (chartConfig.color.startsWith('#f9')) return colorPalettes.orange;
+    if (chartConfig.color.startsWith('#06')) return colorPalettes.cyan;
+    return colorPalettes.blue;
+  };
+
   const getOption = () => {
     const categories = mockChartData.source.map((item) => item['科目']);
     const values = mockChartData.source.map((item) => item['成绩']);
@@ -200,45 +271,88 @@ export default function CanvasPanel() {
     }
 
     if (chartType === 'pie') {
+      const palette = getCurrentPalette();
       return {
         ...baseOption,
         tooltip: {
           trigger: 'item',
           formatter: '{b}: {c} ({d}%)',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          borderColor: '#fff',
+          borderWidth: 1,
+          textStyle: {
+            color: '#fff',
+            fontSize: 14,
+          },
         },
         series: [
           {
             name: '成绩分布',
             type: 'pie',
-            radius: ['40%', '70%'],
-            avoidLabelOverlap: false,
+            radius: ['45%', '72%'],
+            center: ['50%', '50%'],
+            avoidLabelOverlap: true,
             itemStyle: {
-              borderRadius: 10,
+              borderRadius: 6,
               borderColor: '#fff',
-              borderWidth: 2,
+              borderWidth: 3,
+              shadowBlur: 10,
+              shadowColor: 'rgba(0, 0, 0, 0.2)',
+              shadowOffsetX: 2,
+              shadowOffsetY: 2,
             },
             label: {
               show: chartConfig.showDataLabels,
               position: 'outside',
-              formatter: '{b}: {c}',
+              formatter: '{b}\n{c}',
+              fontSize: 13,
+              fontWeight: 500,
+              color: '#333',
             },
             emphasis: {
+              scale: 1.05,
+              scaleSize: 10,
               label: {
                 show: true,
                 fontSize: 16,
                 fontWeight: 'bold',
+                formatter: '{b}\n{c}',
+              },
+              itemStyle: {
+                shadowBlur: 20,
+                shadowOffsetX: 0,
+                shadowOffsetY: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.5)',
               },
             },
             labelLine: {
               show: chartConfig.showDataLabels,
-            },
-            data: mockChartData.source.map((item) => ({
-              value: item['成绩'],
-              name: item['科目'],
-              itemStyle: {
-                color: `${chartConfig.color}${Math.floor(Math.random() * 99 + 1).toString(16).padStart(2, '0')}`,
+              length: 30,
+              length2: 10,
+              smooth: true,
+              lineStyle: {
+                width: 2,
               },
-            })),
+            },
+            data: mockChartData.source.map((item, index) => {
+              const colorIndex = index % palette.length;
+              return {
+                value: item['成绩'],
+                name: item['科目'],
+                itemStyle: {
+                  color: palette[colorIndex].color,
+                  borderColor: '#fff',
+                  borderWidth: 2,
+                },
+                emphasis: {
+                  itemStyle: {
+                    color: palette[colorIndex].color,
+                    borderColor: '#fff',
+                    borderWidth: 3,
+                  },
+                },
+              };
+            }),
           },
         ],
       };
