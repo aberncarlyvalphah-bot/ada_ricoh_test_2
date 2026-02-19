@@ -77,7 +77,12 @@ export default function Sidebar() {
         ref={fileInputRef}
         type="file"
         accept=".csv,.xlsx,.xls"
-        className="hidden"
+        style={{
+          position: 'fixed',
+          left: '-9999px',
+          opacity: 0,
+          pointerEvents: 'none'
+        }}
         onChange={handleFileUpload}
       />
 
