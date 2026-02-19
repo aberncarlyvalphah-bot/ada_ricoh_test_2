@@ -390,7 +390,7 @@ export default function CanvasPanel() {
             label: {
               show: chartConfig.showDataLabels,
               position: 'top',
-              formatter: (params: any) => params.data[2],
+              formatter: (params: { data: [number, number, string] }) => params.data[2],
             },
           },
         ],
@@ -467,9 +467,9 @@ export default function CanvasPanel() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background">
+    <div className="w-full min-h-full flex flex-col bg-background p-0 self-start">
       {/* Chart Card */}
-      <div className="bg-card border rounded-lg shadow-sm overflow-hidden mb-4 mx-4 mt-4">
+      <div className="bg-card border rounded-lg shadow-sm mb-4 mx-4 mt-4">
         {/* Header with chart type selector and config button */}
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <h3 className="font-semibold text-sm">成绩分布图</h3>
@@ -554,15 +554,17 @@ export default function CanvasPanel() {
           </div>
         )}
 
-        {/* Chart */}
-        <div className="h-96 p-4">
-          <ReactECharts
-            key={`${chartType}-${chartConfig.color}-${showConfig}`}
-            option={getOption()}
-            style={{ height: '100%', width: '100%' }}
-            notMerge={true}
-            lazyUpdate={true}
-          />
+        {/* Chart - 高度留足，避免图例被裁切 */}
+        <div className="p-4">
+          <div className={showConfig ? 'min-h-[20rem]' : 'h-[26rem] min-h-[24rem]'}>
+            <ReactECharts
+              key={`${chartType}-${chartConfig.color}-${showConfig}`}
+              option={getOption()}
+              style={{ height: '100%', width: '100%' }}
+              notMerge={true}
+              lazyUpdate={true}
+            />
+          </div>
         </div>
       </div>
 

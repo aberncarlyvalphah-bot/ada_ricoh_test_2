@@ -1,5 +1,29 @@
 # Progress Log
 
+## 2026-02-19 - Fix: Chart configuration panel visibility
+
+### What was done:
+- 修复 CanvasPanel 配置面板的可见性问题：
+  - 移除 chart card 的 `overflow-visible` 样式，避免布局冲突
+  - 调整 chart container 高度逻辑：当配置面板展开时使用 `min-h-[20rem]`，允许自适应高度
+  - 添加 wrapper div 以更好地控制图表高度
+  - 修复 scatter chart formatter 的 TypeScript 类型问题（`any` 改为 `{ data: [number, number, string] }`）
+
+### Testing:
+- ✅ npm run lint 通过（CanvasPanel 无错误，仅剩未使用变量警告）
+- ✅ npm run build 成功
+- ✅ 配置面板点击 Settings 按钮后正常显示
+- ✅ 所有控件（2 个 checkbox + 6 个颜色按钮）完全可见
+- ✅ 面板高度 193px，所有控件在 viewport 内
+- ✅ 右侧面板保持滚动能力（overflowY: auto）
+
+### Notes:
+- 配置面板在展开时会压缩图表高度，确保整体布局可滚动
+- 颜色选择按钮点击可即时切换图表颜色
+- 图表高度动态调整：展开配置时 min-h-[20rem]，关闭时固定 h-[26rem]
+
+---
+
 ## 2026-02-19 - Task 8: 添加图表类型扩展
 
 ### What was done:

@@ -13,14 +13,14 @@ export default function WorkbenchPage({ params }: { params: { id: string } }) {
         <Sidebar />
 
         {/* Main Content */}
-        <main className="flex-1 flex overflow-y-auto">
+        <main className="flex-1 flex min-h-0">
           {/* Left Panel: Chat (30%) */}
-          <div className="w-[30%] flex flex-col min-w-0">
+          <div className="w-[30%] flex flex-col min-w-0 min-h-0">
             <ChatPanel />
           </div>
 
-          {/* Right Panel: Canvas (70%) */}
-          <div className="flex-1 flex flex-col min-w-0">
+          {/* Right Panel: Canvas (70%) - 固定高度 + 超出滚动，与左侧消息区一致出现垂直滚动条 */}
+          <div className="flex-1 flex flex-col min-w-0 min-h-0 h-full overflow-y-auto overflow-x-hidden">
             <CanvasPanel />
           </div>
         </main>
