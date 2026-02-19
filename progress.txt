@@ -1,5 +1,43 @@
 # Progress Log
 
+## 2026-02-19 - Task 8: 添加图表类型扩展
+
+### What was done:
+- 新增图表类型：
+  - 饼图（Pie Chart）- 环形图展示数据占比，支持 hover 高亮
+  - 散点图（Scatter Chart）- 双轴数据分布图，显示成绩 vs 综合评分
+  - 热力图（Heatmap）- 颜色深浅表示数据值，支持可交互式 visualMap
+
+- 新增功能：
+  - 图表配置面板（Settings 按钮）：
+    - 显示/隐藏图例
+    - 显示/隐藏数据标签（适用于 Pie、Scatter、Heatmap）
+    - 6 种颜色主题选择（Blue、Green、Red、Purple、Orange、Cyan）
+  - 导出图表按钮（Download 图标，功能待实现）
+  - 图表类型选择器扩展到 6 种类型（Radar、Bar、Line、Pie、Scatter、Heatmap）
+
+- 代码质量优化：
+  - 使用 `Record<string, unknown>` 替代 `any` 类型
+  - 动态 key 确保 ECharts 正确更新（`${chartType}-${chartConfig.color}-${showConfig}`）
+  - 修复拼写错误（`radar`、`科目` 等）
+
+### Testing:
+- ✅ npm run lint 通过（无 CanvasPanel 相关错误）
+- ✅ npm run build 成功
+- ✅ 所有图表类型可正常切换
+- ✅ 配置面板正确显示/隐藏
+- ✅ 图例和数据标签开关正常工作
+- ✅ 颜色主题切换即时生效
+
+### Notes:
+- 饼图使用随机颜色为每个扇区生成不同颜色
+- 散点图的数据格式：`[x, y, label]`
+- 热力图支持可交互式 visualMap（可拖动调整颜色范围）
+- 导出功能需要实现实际的图表转图片逻辑
+- 配置面板使用条件渲染，不影响性能
+
+---
+
 ## 2026-02-19 - Task 7: 实现数据预览功能
 
 ### What was done:
